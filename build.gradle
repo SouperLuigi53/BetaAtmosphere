@@ -1,0 +1,61 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://api.modrinth.com/maven' }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        'beta_atmosphere' {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    clientCompileOnly 'maven.modrinth:sodium:mc26.3-0.9.2-fabric'
+    if (providers.gradleProperty('sodium').orNull == 'true') {
+        clientRuntimeOnly 'maven.modrinth:sodium:mc26.3-0.9.2-fabric'
+    }
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    def smoke = providers.gradleProperty('smoke').orNull == 'true'
+    inputs.property 'smoke', smoke
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+        if (smoke) filter { line -> line.replace('"beta_atmosphere.client.mixins.json"',
+                '"beta_atmosphere.client.mixins.json", "beta_atmosphere.smoke.mixins.json"') }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = 25 }
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+test { useJUnitPlatform() }
+jar { from('LICENSE'); from('THIRD-PARTY-NOTICES.md'); from('LEGACY-ASSETS.sha256') }
+
+// Opt-in development harness; excluded from normal builds and the delivered mod.
+if (providers.gradleProperty('smoke').orNull == 'true') {
+    sourceSets.client.java.srcDir 'src/smoke/java'
+    sourceSets.client.resources.srcDir 'src/smoke/resources'
+    loom.runs.client {
+        if (providers.gradleProperty('dropSmoke').orNull == 'true') vmArg '-DbetaAtmosphere.dropSmoke=true'
+        programArgs '--quickPlaySingleplayer', 'New World'
+        programArgs '--width', '1280', '--height', '720'
+    }
+}
