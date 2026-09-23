@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "Beta Atmosphere",
   "icon": "assets/beta_atmosphere/icon.png",
-  "description": "Beta lighting, atmosphere, procedural fluids and camera-facing item drops, with Dappled Forest's orange palette preserved. Client-side, compatible with Sodium.",
+  "description": "Recreate the feel and look of Minecraft Beta 1.7.3 - Best paired with Programmer Art.",
   "authors": ["Luigi53"],
   "license": "MIT",
   "environment": "client",
